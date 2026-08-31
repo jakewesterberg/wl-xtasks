@@ -24,10 +24,25 @@ publishes:
     kind: event-code-allocation
     stability: planned
     what: >-
-      Which numeric event code means what, allocated once here so every reader
-      decodes the same way. wl-preproc reads event handling from here rather
-      than defining it, and wl-expviz needs it to label trials — a recorded code
-      carries timing without it, and no meaning. Nothing is allocated yet.
+      Which numeric event code means what, in the ranges this package owns:
+      TaskEvent 256-4095 (lab-wide task-event semantics), TaskTypeCode 100+
+      (lab-defined task identities) and 4096-32767 (task-specific and condition
+      encoding). Allocated once here so every reader decodes the same way, and
+      wl-expviz needs it to label trials — a recorded code carries timing
+      without it, and no meaning.
+
+      This entry previously claimed the whole vocabulary and said nothing was
+      allocated. Both were false: wl-preproc's wl_preproc/contracts/events.py
+      is a frozen interface owning the framing, the escapes, the checksum, the
+      DVA encoding and Marker 1-255, and it carries real allocations. Corrected
+      2026-08-31 per wl-expcontroller ADR-0007, which splits ownership on
+      decodability versus meaning — undecodable is wl-preproc's, uninterpretable
+      is this package's.
+
+      TaskEvent 256-4095 moving here is the one part of that split still
+      awaiting wl-preproc's agreement; its existing 256-259 transfer as
+      already-allocated and are never renumbered. Nothing in this package's own
+      ranges is allocated yet.
 
 consumes:
   - name: session-id
@@ -36,3 +51,11 @@ consumes:
       are only interpretable against that identity. The fuller interface — how
       event lines reach the sync box's GPIO, and what the tasks receive back —
       is not settled, so only this is declared.
+
+  # Not declared as a `consumes` entry with a name, because wl-preproc does not
+  # publish the codec as an artifact at all — seven artifacts are declared there
+  # and the event protocol is not among them, so the most load-bearing contract
+  # in the recording path is invisible to `wlo`. Naming it here would be a V014
+  # warning (consumes something no package publishes) rather than a recorded
+  # edge. wl-expcontroller has asked them to declare it
+  # (docs/pending-wl-preproc-amendments.md); this entry lands when theirs does.
