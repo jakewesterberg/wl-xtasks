@@ -1,23 +1,29 @@
-# Registered as wl-bhvtasks until 2026-08-30, and as wl-bhveval and wl-bhvtask
-# before that. The registry carries all three as aliases, so wl-preproc's design
-# spec naming `{matlab, psychtoolbox, wl-bhvtask}` as the behavioural stack, and
-# every other older reference, still resolve here.
+# wl-exptasks since 2026-09-26. Named wl-mllib from 2026-08-30 until then,
+# registered as wl-bhvtasks before that, and as wl-bhveval and wl-bhvtask before
+# that. The registry carries all four as aliases, so wl-preproc's design spec
+# naming `{matlab, psychtoolbox, wl-bhvtask}` as the behavioural stack, and every
+# other older reference, still resolve here.
+#
+# "ml" was MonkeyLogic, and the lab does not run it: wl-expcontroller's ADR-0005
+# made that controller the day-one stack, with no maintained MonkeyLogic task
+# twins. It also read as machine learning.
 schema: 1
-slug: wl-mllib
+slug: wl-exptasks
 class: experiment
 lifecycle: scaffolded
 visibility: private
-remote: https://github.com/jakewesterberg/wl-mllib.git
+remote: https://github.com/jakewesterberg/wl-exptasks.git
 
 summary: >-
-  The MonkeyLogic task library: the behavioural tasks animals perform in
-  experiments, plus the event-code allocation needed to decode their output.
-  wl-preproc reads event handling from here rather than defining it; wl-works
-  renders a page per task. wl-shook and wl-juicer are devices these tasks drive.
+  The experiment task library: the behavioural tasks animals perform, on the
+  recording rigs and on wl-touchtrain's cage-side kiosk, written in
+  wl-expcontroller's task-definition format, plus the event-code allocation
+  needed to interpret their output. wl-preproc decodes those codes; wl-works
+  renders a page per task. wl-juicer delivers the rewards these tasks command.
 
-# No runs_on, builds_on or third_party. The repository holds no code yet, and
-# wl-preproc's own design says the behavioural stack is unchosen — declaring
-# MATLAB and Psychtoolbox here would assert a toolchain nothing has committed to.
+# No runs_on, builds_on or third_party. The repository holds no code yet. The
+# controller is chosen — wl-expcontroller, whose own manifest declares what it
+# runs on — but no task exists here, so what the tasks need beyond it is unknown.
 
 publishes:
   - name: task-event-vocabulary
@@ -39,10 +45,13 @@ publishes:
       decodability versus meaning — undecodable is wl-preproc's, uninterpretable
       is this package's.
 
-      TaskEvent 256-4095 moving here is the one part of that split still
-      awaiting wl-preproc's agreement; its existing 256-259 transfer as
-      already-allocated and are never renumbered. Nothing in this package's own
-      ranges is allocated yet.
+      wl-preproc agreed on 2026-09-01 that TaskEvent 256-4095 is this package's
+      (their docs/CHECKPOINT.md, and the `consumes` entry in their wl.yaml). The
+      256-259 they had already allocated transfer as allocated and are never
+      renumbered; they stay mirrored in their events.py until this package
+      ships its own. Nothing else is allocated here yet: wl-expcontroller's
+      reference allocation, in 4096-32767, lives in its tasks/allocation.py
+      until it moves here.
 
 consumes:
   - name: session-id
@@ -51,11 +60,10 @@ consumes:
       are only interpretable against that identity. The fuller interface — how
       event lines reach the sync box's GPIO, and what the tasks receive back —
       is not settled, so only this is declared.
-
-  # Not declared as a `consumes` entry with a name, because wl-preproc does not
-  # publish the codec as an artifact at all — seven artifacts are declared there
-  # and the event protocol is not among them, so the most load-bearing contract
-  # in the recording path is invisible to `wlo`. Naming it here would be a V014
-  # warning (consumes something no package publishes) rather than a recorded
-  # edge. wl-expcontroller has asked them to declare it
-  # (docs/pending-wl-preproc-amendments.md); this entry lands when theirs does.
+  - name: event-code-protocol
+    why: >-
+      Every code allocated here is carried in wl-preproc's 16-bit strobed
+      framing, whose escapes, checksum and Marker 1-255 are theirs. An
+      allocation that ignores the framing is undecodable however well it is
+      named. This edge waited until wl-preproc published the protocol as an
+      artifact, which it now does.

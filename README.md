@@ -1,6 +1,8 @@
-# wl-mllib
+# wl-exptasks
 
-The MonkeyLogic task library: the behavioural tasks animals perform in experiments, plus the event-code allocation needed to decode their output. wl-preproc reads event handling from here rather than defining it; wl-works renders a page per task. wl-shook and wl-juicer are devices these tasks drive.
+The experiment task library: the behavioural tasks animals perform, on the recording rigs and on wl-touchtrain's cage-side kiosk, written in wl-expcontroller's task-definition format, plus the event-code allocation needed to interpret their output. wl-preproc decodes those codes; wl-works renders a page per task. wl-juicer delivers the rewards these tasks command.
+
+Named `wl-mllib` until 2026-09-26. "ml" was MonkeyLogic, which the lab does not run (wl-expcontroller ADR-0005). The old name, and the earlier `wl-bhvtasks`, `wl-bhveval` and `wl-bhvtask`, still resolve here through the registry's aliases, and GitHub redirects the old URL.
 
 ## License
 
