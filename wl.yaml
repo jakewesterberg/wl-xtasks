@@ -1,28 +1,30 @@
-# wl-exptasks since 2026-09-26. Named wl-mllib from 2026-08-30 until then,
-# registered as wl-bhvtasks before that, and as wl-bhveval and wl-bhvtask before
-# that. The registry carries all four as aliases, so wl-preproc's design spec
-# naming `{matlab, psychtoolbox, wl-bhvtask}` as the behavioural stack, and every
-# other older reference, still resolve here.
+# wl-xtasks since 2026-09-28. Named wl-exptasks from 2026-09-26 until then,
+# wl-mllib from 2026-08-30 before that, registered as wl-bhvtasks before that,
+# and as wl-bhveval and wl-bhvtask before that. The registry carries all five
+# as aliases, so wl-preproc's design spec naming `{matlab, psychtoolbox,
+# wl-bhvtask}` as the behavioural stack, and every other older reference,
+# still resolve here.
 #
-# "ml" was MonkeyLogic, and the lab does not run it: wl-expcontroller's ADR-0005
-# made that controller the day-one stack, with no maintained MonkeyLogic task
-# twins. It also read as machine learning.
+# "ml" was MonkeyLogic, and the lab does not run it: wl-xcon's ADR-0005 made
+# that controller the day-one stack, with no maintained MonkeyLogic task
+# twins. It also read as machine learning. wl-xcon is what wl-expcontroller
+# was renamed to on 2026-09-28, alongside this package and wl-expviz.
 schema: 1
-slug: wl-exptasks
+slug: wl-xtasks
 class: experiment
 lifecycle: scaffolded
 visibility: private
-remote: https://github.com/jakewesterberg/wl-exptasks.git
+remote: https://github.com/jakewesterberg/wl-xtasks.git
 
 summary: >-
   The experiment task library: the behavioural tasks animals perform, on the
   recording rigs and on wl-touchtrain's cage-side kiosk, written in
-  wl-expcontroller's task-definition format, plus the event-code allocation
+  wl-xcon's task-definition format, plus the event-code allocation
   needed to interpret their output. wl-preproc decodes those codes; wl-works
   renders a page per task. wl-juicer delivers the rewards these tasks command.
 
 # No runs_on, builds_on or third_party. The repository holds no code yet. The
-# controller is chosen — wl-expcontroller, whose own manifest declares what it
+# controller is chosen — wl-xcon, whose own manifest declares what it
 # runs on — but no task exists here, so what the tasks need beyond it is unknown.
 
 publishes:
@@ -34,14 +36,14 @@ publishes:
       TaskEvent 256-4095 (lab-wide task-event semantics), TaskTypeCode 100+
       (lab-defined task identities) and 4096-32767 (task-specific and condition
       encoding). Allocated once here so every reader decodes the same way, and
-      wl-expviz needs it to label trials — a recorded code carries timing
+      wl-xviz needs it to label trials — a recorded code carries timing
       without it, and no meaning.
 
       This entry previously claimed the whole vocabulary and said nothing was
       allocated. Both were false: wl-preproc's wl_preproc/contracts/events.py
       is a frozen interface owning the framing, the escapes, the checksum, the
       DVA encoding and Marker 1-255, and it carries real allocations. Corrected
-      2026-08-31 per wl-expcontroller ADR-0007, which splits ownership on
+      2026-08-31 per wl-xcon ADR-0007, which splits ownership on
       decodability versus meaning — undecodable is wl-preproc's, uninterpretable
       is this package's.
 
@@ -49,7 +51,7 @@ publishes:
       (their docs/CHECKPOINT.md, and the `consumes` entry in their wl.yaml). The
       256-259 they had already allocated transfer as allocated and are never
       renumbered; they stay mirrored in their events.py until this package
-      ships its own. Nothing else is allocated here yet: wl-expcontroller's
+      ships its own. Nothing else is allocated here yet: wl-xcon's
       reference allocation, in 4096-32767, lives in its tasks/allocation.py
       until it moves here.
 
