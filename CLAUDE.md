@@ -60,3 +60,10 @@ a machine class needs, which `wl-*` names resolve to nothing — use a
 
 Its `docs/known-gaps.md` records what is known broken; `docs/superpowers/specs/`
 holds the design and the reasoning.
+
+## When a task's choice rests on the literature
+
+Cite it by key from wl-xcon's library, `docs/references/library.bib` (for example
+`[@levitt1971transformed]`), and give the decision an entry in wl-xcon's
+`docs/references/decisions.md`; a choice that rests on the PI's word or a rule says so
+there instead (the PI, 2026-10-08; wl-xcon's ADR-0010).
