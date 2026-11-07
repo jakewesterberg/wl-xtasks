@@ -331,7 +331,8 @@ search = Trial(
 #: step reached, 80% there"). The staircases' floors and ceilings are the stages' own, faint to
 #: full and 4 to 12 discs ("set size starts at 4"); their steps and counts are settings. Neither
 #: declares where it starts, so each starts at the level nearest the run's value of its setting,
-#: which the trainer picks at the run's start.
+#: which the trainer picks at the run's start. Each names its hardest step in the trainer's words,
+#: which the prompt to move up says (the PI's sketch, §3.5).
 UP = (P("move_up_bar"), P("move_up_window"))
 STEPPED = {"down": P("staircase_down"), "up": P("staircase_up")}
 TRAINING = Plan(
@@ -342,14 +343,16 @@ TRAINING = Plan(
             [Condition("fade_in", {"set_size": 4}, target=1)],
             criterion=UP,
             staircase=Staircase(
-                "distractor_fraction", Steps(0.1, 1.0, P("fade_in_step")), **STEPPED
+                "distractor_fraction", Steps(0.1, 1.0, P("fade_in_step")), **STEPPED,
+                hardest="the distractors are at full brightness",
             ),
         ),
         Block(
             "Crowd",
             [Condition("crowd", {"distractor_fraction": 1.0}, target=1)],
             criterion=UP,
-            staircase=Staircase("set_size", Steps(4, 12, P("crowd_step")), **STEPPED),
+            staircase=Staircase("set_size", Steps(4, 12, P("crowd_step")), **STEPPED,
+                                hardest="the ring holds all 12 discs"),
         ),
     ],
     # "Rig suggests, trainer confirms"; back below `move_back_bar` of the last `move_back_window`

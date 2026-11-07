@@ -13,7 +13,8 @@ schema: 1
 slug: wl-xtasks
 class: experiment
 lifecycle: scaffolded
-visibility: private
+# Public since 2026-11-07, by the PI's choice.
+visibility: public
 remote: https://github.com/jakewesterberg/wl-xtasks.git
 
 summary: >-
