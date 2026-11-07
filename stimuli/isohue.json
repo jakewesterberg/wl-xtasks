@@ -1,0 +1,13 @@
+{
+  "name": "isohue",
+  "colors": {
+    "blue": [0.19104, 0.18939],
+    "purple": [0.28247, 0.20472],
+    "red": [0.45955, 0.32918],
+    "green": [0.31324, 0.50711]
+  },
+  "apex": [0.31272, 0.32900],
+  "luminance_cd_m2": 15.0,
+  "held": "macaque_2deg_LM1",
+  "source": "wl-style's 02-color/isohue_spectrum/ (the PI's local work, not committed in wl-style on 2026-11-07): a CAM16-UCS hue sector at chroma 29.49, matched in macaque cone luminance (L + M at L:M 1, Stockman-Sharpe 2-degree fundamentals). Blue (hue 260), purple (320) and red (20): its isohue_levels.csv, mode cone_macaque_equal, saturation 1.00; the apex: its gray, #969696. Green (140): computed with its generator, isohue.py, at the same chroma and luminance under colour-science 0.4.7 on 2026-11-07. Copied from wl-xcon's tests/fixtures/isohue.json."
+}

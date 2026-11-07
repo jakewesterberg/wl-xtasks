@@ -67,3 +67,14 @@ Cite it by key from wl-xcon's library, `docs/references/library.bib` (for exampl
 `[@levitt1971transformed]`), and give the decision an entry in wl-xcon's
 `docs/references/decisions.md`; a choice that rests on the PI's word or a rule says so
 there instead (the PI, 2026-10-08; wl-xcon's ADR-0010).
+
+## Where things go
+
+- `tasks/`: one task a file, in wl-xcon's task-definition format, exactly one `Task` each.
+  A task here is the PI's, built with his serious input; wl-xcon's own reference tasks are
+  engine fixtures and stay there.
+- `stimuli/`: what a task's stimuli are, as plain data (JSON) a reader needs no wl-xcon code
+  to read, each file's `source` naming where its numbers came from. A task reads its file by
+  a path relative to its own file, never from the working directory.
+- Event codes: wl-xcon's `tasks/allocation.py` until this repository publishes its own; a new
+  code is added there, by name, before a task strobes it.

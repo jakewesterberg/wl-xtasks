@@ -23,9 +23,19 @@ summary: >-
   needed to interpret their output. wl-preproc decodes those codes; wl-works
   renders a page per task. wl-juicer delivers the rewards these tasks command.
 
-# No runs_on, builds_on or third_party. The repository holds no code yet. The
-# controller is chosen — wl-xcon, whose own manifest declares what it
-# runs on — but no task exists here, so what the tasks need beyond it is unknown.
+# No runs_on, builds_on or third_party. The tasks run inside wl-xcon, whose own
+# manifest declares what it runs on, and the first, tasks/popout_search.py
+# (2026-11-07), needs nothing beyond it: its colors are plain data (stimuli/).
+
+requires:
+  - name: wl-xcon
+    for: the task-definition format its tasks are written in, and the engine that runs them
+    why: >-
+      Each task is a Python file declaring one Task in wl-xcon's task-definition
+      format, imported from wl_xcon, and checked, reviewed and run by wl-xcon, which
+      reads it by its path until its library pull exists (wl-xcon's XC-150).
+      Unpinned: a task is read by the wl-xcon that runs it, never installed against
+      a version of it.
 
 publishes:
   - name: task-event-vocabulary
