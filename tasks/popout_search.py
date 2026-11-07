@@ -29,6 +29,12 @@ each trial one is the odd one and another fills the distractors, drawn from the 
 trainer has pooled; the pool starts small and widens when the rig suggests it and the trainer
 picks (TSK-73).
 
+**Every number is a setting the trainer may change in the console** (the PI, 2026-11-07: "i
+mean, everything should be adjustable in the console, no?"; wl-xcon's TSK-75): each starts at the
+PI's value, and a number stays fixed only with its reason written beside it. The stages' own
+values (one disc in Alone, four in Fade-in, the distractors at full in Crowd) are conditions'
+values, which a person's live value overrides like any other.
+
 Positions and sizes are degrees of visual angle at their place (the PI, 2026-10-19). Its event
 codes are wl-xcon's `tasks/allocation.py`'s, until this repository publishes one.
 """
@@ -37,6 +43,8 @@ from pathlib import Path
 
 from wl_xcon.photometry import ColorSet, ColorSetLight, Gray
 from wl_xcon.task import (
+    BACKGROUND,
+    EASIER,
     EXPECTED,
     HARDER,
     NEITHER,
@@ -73,6 +81,7 @@ from wl_xcon.task import (
     Show,
     Staircase,
     State,
+    Steps,
     Stimulus,
     Task,
     Trial,
@@ -86,11 +95,19 @@ ISOHUE = ColorSet.load(Path(__file__).resolve().parents[1] / "stimuli" / "isohue
 #: Their names, in the file's order: blue, purple, red, green.
 COLORS = tuple(ISOHUE.colors)
 
-#: The odd one: a 1° disc at the set's full luminance.
-ODD = {color: Disc(size=1.0, color=ColorSetLight(ISOHUE, color)) for color in COLORS}
-#: A distractor: a 1° disc at `distractor_fraction` of it, faint to full in Fade-in, full in Crowd.
+#: The odd one: a `disc_size` disc (1° to start) at the set's full luminance, `color_luminance`
+#: (15 cd/m² to start, the file's own).
+ODD = {
+    color: Disc(size=P("disc_size"),
+                color=ColorSetLight(ISOHUE, color, luminance=P("color_luminance")))
+    for color in COLORS
+}
+#: A distractor: a disc as large at `distractor_fraction` of it, faint to full in Fade-in, full in
+#: Crowd.
 AMONG = {
-    color: Disc(size=1.0, color=ColorSetLight(ISOHUE, color, fraction=P("distractor_fraction")))
+    color: Disc(size=P("disc_size"),
+                color=ColorSetLight(ISOHUE, color, fraction=P("distractor_fraction"),
+                                    luminance=P("color_luminance")))
     for color in COLORS
 }
 
@@ -110,17 +127,23 @@ POOL = Pool(
 #: (§3.6).
 FIRST_PAIRINGS = POOL.number([(ODD["blue"], AMONG["red"]), (ODD["red"], AMONG["blue"])])
 
-FIX = Stimulus("fix", at=(0.0, 0.0), looks=Disc(size=0.3, color=Gray(P("fix_luminance"))))
+# The fixation point, at the center: a fixed place, since the ring and every window are about it.
+FIX = Stimulus("fix", at=(0.0, 0.0), looks=Disc(size=P("fix_size"), color=Gray(P("fix_luminance"))))
 
-#: **The ring** (§3.1): discs 1° across on a true circle 8° from fixation, the odd one object 0 and
-#: the ring turned to a new direction every trial, so the odd one is anywhere on it. At 8° twelve
-#: discs stay 4.1° apart, so 1.5° windows never overlap.
+#: **The ring** (§3.1): discs `disc_size` across (1° to start) on a true circle `ring_radius` from
+#: fixation (8° to start), the odd one object 0 and the ring turned to a new direction every trial,
+#: so the odd one is anywhere on it. **At the starts**, twelve discs on the 8° ring are 4.13°
+#: apart, so 1.5° windows never overlap. **Over the ranges they can**: on a ring of 8° windows
+#: wider than 2.06° would, and on the smallest ring, 4°, twelve discs are 2.07° apart, which the
+#: 1.5° windows already overlap at (computed 2026-11-07); wl-xcon's load check warns of it
+#: (`crowded-array`), and the trainer keeps them apart.
 ARRAY = Stimulus(
     "search",
+    # The array's center is the fixation point's, fixed with it.
     at=(0.0, 0.0),
     looks=Array(
         n=P("set_size"),
-        radius=8.0,
+        radius=P("ring_radius"),
         target=0,
         looks=P("odd_color"),
         among=P("distractor_color"),
@@ -165,16 +188,26 @@ search = Trial(
     ],
     params=[
         # The PI's starting values (§3.1, "that looks good"), each a value the trainer may change.
+        # The ranges are the builder's, wide enough for a trainer and inside what the checks
+        # hold (the fix round, 2026-11-07).
         Param("inter_trial", unit="s", low=0.0, high=10.0, start=1.0),
         Param("fix_acquisition", unit="s", low=0.5, high=10.0, start=2.0),
         Param("fix_hold", unit="s", low=0.05, high=2.0, start=0.5),
         Param("response_deadline", unit="s", low=0.1, high=3.0, start=1.0),
         Param("target_hold", unit="s", low=0.05, high=1.0, start=0.3),
         Param("timeout", unit="s", low=0.0, high=10.0, start=2.0),
-        # The PI's sizes (§3.1). Twelve discs on the 8° ring are 4.13° apart, so a window wider
-        # than 2.06° would overlap its neighbor's (computed 2026-11-07).
+        # The PI's sizes (§3.1). At the starts, twelve discs on the 8° ring are 4.13° apart, so a
+        # window wider than 2.06° would overlap its neighbor's (computed 2026-11-07); over the
+        # ranges below they can overlap, which the load check warns of (`crowded-array`).
         Param("fix_window", unit="deg", low=0.5, high=5.0, start=2.0),
         Param("object_window", unit="deg", low=0.5, high=2.0, start=1.5),
+        Param("disc_size", unit="deg", low=0.2, high=3.0, start=1.0),
+        Param("ring_radius", unit="deg", low=4.0, high=14.0, start=8.0),
+        Param("fix_size", unit="deg", low=0.1, high=1.0, start=0.3),
+        # The colors' brightness at full, cd/m² of macaque luminance ("15 cd/m² on every rig",
+        # §3.2), the color set file's own to start; Fade-in's distractors take a share of it.
+        Param("color_luminance", unit="cd/m2", low=1.0, high=30.0,
+              start=ISOHUE.luminance_cd_m2),
         # Absolute luminance, D65 white, as the lab's other fixation points (the PI, 2026-10-07).
         Param("fix_luminance", unit="cd/m2", low=0.0, high=80.0, start=40.0),
         # How many discs: one in Alone, four in Fade-in, Crowd's staircase from 4 to 12.
@@ -188,6 +221,21 @@ search = Trial(
         Param("odd_color", unit="appearance", choices=tuple(ODD.values())),
         Param("distractor_color", unit="appearance", choices=tuple(AMONG.values())),
         Param("pairings", unit="pairings", low=1, high=4095, start=FIRST_PAIRINGS),
+        # **The bars** (§3.4), one pair for every stage: up at 80% right of the last 50 answers
+        # at the stage's hardest step, back below 50% of the last 50 first answers ("80%
+        # correct, last 50 trials"; "Below 50% of the last 50"), each read at every judgment.
+        Param("move_up_bar", unit="fraction", low=0.5, high=1.0, start=0.8),
+        Param("move_up_window", unit="answers", low=5, high=200, start=50),
+        Param("move_back_bar", unit="fraction", low=0.05, high=0.95, start=0.5),
+        Param("move_back_window", unit="answers", low=5, high=200, start=50),
+        # **The staircases** (§3.4, "Automatic within a stage"): three right a level harder, one
+        # wrong a level easier, in both stages [@levitt1971transformed]; and each stage's step,
+        # the distractors by a tenth of full, the discs one at a time ("set size starts at 4, and
+        # finer steps"), the builder's (§7).
+        Param("staircase_down", unit="answers", low=1, high=10, start=3),
+        Param("staircase_up", unit="answers", low=1, high=10, start=1),
+        Param("fade_in_step", unit="fraction", low=0.05, high=0.9, start=0.1),
+        Param("crowd_step", unit="objects", low=1, high=8, start=1),
     ],
     states=[
         # The time between trials, a blank screen.
@@ -219,7 +267,8 @@ search = Trial(
                     "early",
                     do=[Hide("fix"), Mark(ABORT_FIXATION_BREAK), Mark(TIMEOUT_ON)],
                 ),
-                # Longer than any legal `fix_hold`, as the lab's other tasks bound a hold.
+                # Longer than any legal `fix_hold`, as the lab's other tasks bound a hold: a bound
+                # on a hold the engine runs, no number a trainer sets.
                 On(After(10.0), Outcome.NO_FIXATION),
             ],
         ),
@@ -249,7 +298,8 @@ search = Trial(
                 # began counts here only where it lands; one that begins here is a second look,
                 # an error, wherever it goes. An eye that stays put ends on the bound below.
                 On(SaccadeOnset(), "astray", do=[Hide("search"), Mark(TIMEOUT_ON)]),
-                # Far longer than any saccade lasts: an engineering bound on landing.
+                # Far longer than any saccade lasts: an engineering bound on landing, no number a
+                # trainer sets.
                 On(After(0.3), "astray", do=[Hide("search"), Mark(TIMEOUT_ON)]),
             ],
         ),
@@ -262,7 +312,8 @@ search = Trial(
                     do=[Mark(OUTCOME_CORRECT), Mark(REWARD_COMMANDED), Reward("reward_correct")],
                 ),
                 On(Exited("search.target"), "broke", do=[Hide("search"), Mark(TIMEOUT_ON)]),
-                # Longer than any legal `target_hold`: a hold runs its own time.
+                # Longer than any legal `target_hold`: a hold runs its own time; a bound, no number
+                # a trainer sets.
                 On(After(3.0), Outcome.NO_RESPONSE, do=[Mark(OUTCOME_NO_RESPONSE)]),
             ],
         ),
@@ -274,31 +325,36 @@ search = Trial(
 )
 
 #: **The stages** (§3.3, "Alone, Fade-in, Crowd"), easiest first. Each is one condition, worked
-#: until the trainer moves on. Each stage's bar is 80% right of its last 50 answers at its hardest
-#: step ("80% correct, last 50 trials"; "Hardest step reached, 80% there"). The staircases' steps
-#: are the builder's (§7): the distractors' luminance by a tenth of full, the discs one at a time
-#: ("set size starts at 4, and finer steps"). Neither declares where it starts, so each starts at
-#: the level nearest the run's value of its setting, which the trainer picks at the run's start.
+#: until the trainer moves on; its own value -- one disc, four, the distractors at full -- a
+#: condition's, which a person's live value overrides. Each stage's bar is `move_up_bar` right of
+#: its last `move_up_window` answers at its hardest step ("80% correct, last 50 trials"; "Hardest
+#: step reached, 80% there"). The staircases' floors and ceilings are the stages' own, faint to
+#: full and 4 to 12 discs ("set size starts at 4"); their steps and counts are settings. Neither
+#: declares where it starts, so each starts at the level nearest the run's value of its setting,
+#: which the trainer picks at the run's start.
+UP = (P("move_up_bar"), P("move_up_window"))
+STEPPED = {"down": P("staircase_down"), "up": P("staircase_up")}
 TRAINING = Plan(
     [
-        Block("Alone", [Condition("alone", {"set_size": 1}, target=1)], criterion=(0.8, 50)),
+        Block("Alone", [Condition("alone", {"set_size": 1}, target=1)], criterion=UP),
         Block(
             "Fade-in",
             [Condition("fade_in", {"set_size": 4}, target=1)],
-            criterion=(0.8, 50),
+            criterion=UP,
             staircase=Staircase(
-                "distractor_fraction", (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
+                "distractor_fraction", Steps(0.1, 1.0, P("fade_in_step")), **STEPPED
             ),
         ),
         Block(
             "Crowd",
             [Condition("crowd", {"distractor_fraction": 1.0}, target=1)],
-            criterion=(0.8, 50),
-            staircase=Staircase("set_size", (4, 5, 6, 7, 8, 9, 10, 11, 12)),
+            criterion=UP,
+            staircase=Staircase("set_size", Steps(4, 12, P("crowd_step")), **STEPPED),
         ),
     ],
-    # "Rig suggests, trainer confirms"; back below 50% of the last 50 ("Below 50% of the last 50").
-    order=ByCriterion(fall_back=(0.5, 50), confirm=True),
+    # "Rig suggests, trainer confirms"; back below `move_back_bar` of the last `move_back_window`
+    # ("Below 50% of the last 50").
+    order=ByCriterion(fall_back=(P("move_back_bar"), P("move_back_window")), confirm=True),
 )
 
 TASK = Task(
@@ -336,6 +392,37 @@ TASK = Task(
         "pairings": Meaning(NOT_DIFFICULTY, STIMULUS, note=(
             "which pairings of odd color and distractor color are drawn; widening the pool adds "
             "pairings, not difficulty")),
+        "disc_size": Meaning(EXPECTED, STIMULUS, raising=EASIER, note=(
+            "larger discs are easier to see and to land a saccade on; the windows are their own "
+            "settings")),
+        "ring_radius": Meaning(NOT_DIFFICULTY, STIMULUS, note=(
+            "how far the ring sits from fixation, as the shared list's array_eccentricity: what "
+            "moving it does depends on the search")),
+        "fix_size": Meaning(EXPECTED, STIMULUS, raising=EASIER, note=(
+            "a larger fixation point is easier to find")),
+        "color_luminance": Meaning(EXPECTED, STIMULUS, raising=EASIER, relative_to=BACKGROUND,
+                                   note=(
+            "brighter discs on black are easier to see, as a target's luminance is; every color "
+            "and the distractors' share move together, so the odd one still differs by color "
+            "alone at full")),
+        "move_up_bar": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "when the rig suggests moving up or widening the pool, not what a trial asks")),
+        "move_up_window": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how many answers the bar to move up reads, not what a trial asks")),
+        "move_back_bar": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "when the rig suggests moving back, not what a trial asks")),
+        "move_back_window": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how many first answers the bar to move back reads, not what a trial asks")),
+        "staircase_down": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how many right in a row step the staircase harder, between trials; its level is "
+            "the difficulty, not this")),
+        "staircase_up": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how many wrong in a row step the staircase easier, between trials")),
+        "fade_in_step": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how far apart Fade-in's levels are; the level the staircase gives is the difficulty")),
+        "crowd_step": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how many discs apart Crowd's levels are; the level the staircase gives is the "
+            "difficulty")),
     },
     # The rig fixes the head, as the lab's other rig tasks need it.
     needs_fixed_head=True,
