@@ -240,6 +240,11 @@ search = Trial(
         Param("staircase_up", unit="answers", low=1, high=10, start=1),
         Param("fade_in_step", unit="fraction", low=0.05, high=0.9, start=0.1),
         Param("crowd_step", unit="objects", low=1, high=8, start=1),
+        # Each staircase's easiest level, where its stage starts faintest or fewest: the
+        # distractors at a tenth of full, four discs ("set size starts at 4"). Their hardest are
+        # the stages' own definitions (full brightness, all 12 discs), so they stay fixed below.
+        Param("fade_in_floor", unit="fraction", low=0.0, high=0.9, start=0.1),
+        Param("crowd_floor", unit="objects", low=2, high=11, start=4),
     ],
     states=[
         # The time between trials, a blank screen.
@@ -332,11 +337,16 @@ search = Trial(
 #: until the trainer moves on; its own value -- one disc, four, the distractors at full -- a
 #: condition's, which a person's live value overrides. Each stage's bar is `move_up_bar` right of
 #: its last `move_up_window` answers at its hardest step ("80% correct, last 50 trials"; "Hardest
-#: step reached, 80% there"). The staircases' floors and ceilings are the stages' own, faint to
-#: full and 4 to 12 discs ("set size starts at 4"); their steps and counts are settings. Neither
-#: declares where it starts, so each starts at the level nearest the run's value of its setting,
-#: which the trainer picks at the run's start. Each names its hardest step in the trainer's words,
-#: which the prompt to move up says (the PI's sketch, §3.5).
+#: step reached, 80% there"). The staircases' floors are settings, faint and four discs to start
+#: (`fade_in_floor`, `crowd_floor`), and so are their steps and counts; **their hardest ends stay
+#: fixed, 1.0 and 12**, since each is the stage's own definition of its hardest step -- the
+#: distractors at full, so the odd one differs by color alone; the ring at its twelve discs --
+#: which the bar to move up is judged at. Neither declares where it starts, so each starts at the
+#: level nearest the run's value of its setting, which the trainer picks at the run's start. Each
+#: names its hardest step in the trainer's words, which the prompt to move up says (the PI's
+#: sketch, §3.5). **Each condition's `target=1` is fixed**: a stage is one condition worked on
+#: until a person moves the run, its targets a minimum met at its first trial, so the number
+#: changes nothing a trainer could want.
 UP = (P("move_up_bar"), P("move_up_window"))
 STEPPED = {"down": P("staircase_down"), "up": P("staircase_up")}
 TRAINING = Plan(
@@ -347,7 +357,8 @@ TRAINING = Plan(
             [Condition("fade_in", {"set_size": 4}, target=1)],
             criterion=UP,
             staircase=Staircase(
-                "distractor_fraction", Steps(0.1, 1.0, P("fade_in_step")), **STEPPED,
+                "distractor_fraction", Steps(P("fade_in_floor"), 1.0, P("fade_in_step")),
+                **STEPPED,
                 hardest="the distractors are at full brightness",
             ),
         ),
@@ -355,7 +366,8 @@ TRAINING = Plan(
             "Crowd",
             [Condition("crowd", {"distractor_fraction": 1.0}, target=1)],
             criterion=UP,
-            staircase=Staircase("set_size", Steps(4, 12, P("crowd_step")), **STEPPED,
+            staircase=Staircase("set_size", Steps(P("crowd_floor"), 12, P("crowd_step")),
+                                **STEPPED,
                                 hardest="the ring holds all 12 discs"),
         ),
     ],
@@ -430,12 +442,20 @@ TASK = Task(
         "crowd_step": Meaning(NOT_DIFFICULTY, NEITHER, note=(
             "how many discs apart Crowd's levels are; the level the staircase gives is the "
             "difficulty")),
+        "fade_in_floor": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "where Fade-in's staircase starts at its faintest; the level the staircase gives is the "
+            "difficulty")),
+        "crowd_floor": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how few discs Crowd's staircase starts at; the level the staircase gives is the "
+            "difficulty")),
     },
     # The rig fixes the head, as the lab's other rig tasks need it.
     needs_fixed_head=True,
     pool=POOL,
     plans={"training": TRAINING},
     # The ring's direction, anywhere, each trial; a trial a drum brings back (should the trainer
-    # switch drumming on) keeps its place, as it keeps its pairing.
+    # switch drumming on) keeps its place, as it keeps its pairing. **Fixed, the whole circle**:
+    # the odd one's place on the ring is random each trial, so the animal learns its color, not a
+    # place; a narrower draw would teach a place.
     draws={"array_rotation": Uniform(0.0, 360.0, repeat=SAME)},
 )
