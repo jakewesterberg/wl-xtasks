@@ -344,8 +344,10 @@ search = Trial(
 #: (`fade_in_floor`, `crowd_floor`), and so are their steps and counts; **their hardest ends stay
 #: fixed, 1.0 and 12**, since each is the stage's own definition of its hardest step -- the
 #: distractors at full, so the odd one differs by color alone; the ring at its twelve discs --
-#: which the bar to move up is judged at. Neither declares where it starts, so each starts at the
-#: level nearest the run's value of its setting, which the trainer picks at the run's start. Each
+#: which the bar to move up is judged at. Neither declares where it starts, so each starts, the
+#: first time the run enters its stage, at the level nearest the run's value of its setting, which
+#: the trainer picks at the run's start; **a stage the run returns to resumes at the level its
+#: staircase was at when the run left it** (the PI, 2026-11-08: "Pick up where it left"). Each
 #: names its hardest step in the trainer's words, which the prompt to move up says (the PI's
 #: sketch, §3.5). **Each condition's `target=1` is fixed**: a stage is one condition worked on
 #: until a person moves the run, its targets a minimum met at its first trial, so the number
