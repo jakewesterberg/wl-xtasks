@@ -136,7 +136,11 @@ FIX = Stimulus("fix", at=(0.0, 0.0), looks=Disc(size=P("fix_size"), color=Gray(P
 #: apart, so 1.5° windows never overlap. **Over the ranges they can**: on a ring of 8° windows
 #: wider than 2.06° would, and on the smallest ring, 4°, twelve discs are 2.07° apart, which the
 #: 1.5° windows already overlap at (computed 2026-11-07); wl-xcon's load check warns of it
-#: (`crowded-array`), and the trainer keeps them apart.
+#: (`crowded-array`), and the trainer keeps them apart. **The fixation window, whose exit starts
+#: the answer, must stay clear of the discs' windows too**: on a ring smaller than the two radii
+#: together (5° and 2° at their highest) a look to the odd one could land inside it, never leave
+#: it, and end as no response with no reward; wl-xcon warns of it at load over the ranges and as
+#: a value set live makes it so (`answer-window-reaches-objects`).
 ARRAY = Stimulus(
     "search",
     # The array's center is the fixation point's, fixed with it.
