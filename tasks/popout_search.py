@@ -232,6 +232,9 @@ search = Trial(
         Param("move_up_window", unit="answers", low=5, high=200, start=50),
         Param("move_back_bar", unit="fraction", low=0.05, high=0.95, start=0.5),
         Param("move_back_window", unit="answers", low=5, high=200, start=50),
+        # How far a suggestion's bar may be missed before it is withdrawn, in answers (the PI,
+        # 2026-11-08: "Stay up until 3 below"): up at 40 of 50, it goes only below 37.
+        Param("suggestion_margin", unit="answers", low=0, high=20, start=3),
         # **The staircases** (§3.4, "Automatic within a stage"): three right a level harder, one
         # wrong a level easier, in both stages [@levitt1971transformed]; and each stage's step,
         # the distractors by a tenth of full, the discs one at a time ("set size starts at 4, and
@@ -372,8 +375,10 @@ TRAINING = Plan(
         ),
     ],
     # "Rig suggests, trainer confirms"; back below `move_back_bar` of the last `move_back_window`
-    # ("Below 50% of the last 50").
-    order=ByCriterion(fall_back=(P("move_back_bar"), P("move_back_window")), confirm=True),
+    # ("Below 50% of the last 50"); each suggestion standing until its bar is missed by more than
+    # `suggestion_margin` answers ("Stay up until 3 below", the PI, 2026-11-08).
+    order=ByCriterion(fall_back=(P("move_back_bar"), P("move_back_window")), confirm=True,
+                      margin=P("suggestion_margin")),
 )
 
 TASK = Task(
@@ -430,6 +435,8 @@ TASK = Task(
             "how many answers the bar to move up reads, not what a trial asks")),
         "move_back_bar": Meaning(NOT_DIFFICULTY, NEITHER, note=(
             "when the rig suggests moving back, not what a trial asks")),
+        "suggestion_margin": Meaning(NOT_DIFFICULTY, NEITHER, note=(
+            "how long a suggestion stands once made, not what a trial asks")),
         "move_back_window": Meaning(NOT_DIFFICULTY, NEITHER, note=(
             "how many first answers the bar to move back reads, not what a trial asks")),
         "staircase_down": Meaning(NOT_DIFFICULTY, NEITHER, note=(
